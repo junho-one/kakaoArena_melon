@@ -27,9 +27,9 @@ def metrics(model, test_loader, top_k):
 		item = item.cuda()
 		predictions = model(user, item)
 
-		_, indices = torch.topk(predictions, top_k)
-		recommends = torch.take(
-				item, indices).cpu().numpy().tolist()
+		# _, indices = torch.topk(predictions, top_k)
+		# recommends = torch.take(
+		# 		item, indices).cpu().numpy().tolist()
 
 		predictions = torch.round(predictions).cpu().data.numpy()
 		label = np.array(label)
@@ -50,8 +50,26 @@ def metrics(model, test_loader, top_k):
 # 그럼 내꺼에서는 100개 뽑아내고 NDCG 비교?
 
 
-def predict(model, test_loader, top_k):
+def predict(model, test_loader, inv_user_map, inv_item_map, top_k=100):
 	start_time = time.time()
+	# 한 유저당 모든 item 중에 탑 1000개를 뽑기?
+
+	for user, item, label in test_loader:
+
+		user = user.cuda()
+		item = item.cuda()
+		predictions = model(user, item)
+
+		rating, indices = torch.topk(predictions, top_k)
+		recommends = torch.take(
+			item, indices).cpu().numpy().tolist()
+
+		userid = user[0].cpu().numpy().tolist()[0]
+
+		print("reccomed of {}".format(inv_user_map[userid]))
+		for idx, rec in enumerate(recommends,start=1) :
+			print("{} : {}".format(idx, inv_item_map[rec]))
+
 
 
 	end_time = time.time()

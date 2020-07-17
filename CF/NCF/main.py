@@ -161,7 +161,6 @@ for epoch in range(args.epochs):
 			os.mkdir(config.model_path)
 		torch.save(model.state_dict(),
 			'{}{}_{}_{}.pth'.format(config.model_path, config.model, args.status, epoch))
-		print('{}{}_{}_{}.pth'.format(config.model_path, config.model, args.status, epoch))
 
 # print("End. Best epoch {:03d}: HR = {:.3f}, NDCG = {:.3f}".format(
 # 									best_epoch, best_hr, best_ndcg))

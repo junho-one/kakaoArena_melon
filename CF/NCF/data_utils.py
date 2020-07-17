@@ -132,21 +132,21 @@ class NCFData(data.Dataset):
 
     def all_sample_predict(self):
         # self.feture에 있는 question을 가지고 모든 가짓수의 데이터들을 만듬
-        print("SSSSTART")
         unique_plylst = set()
         plylst_dict = defaultdict(list)
         all_features = []
         all_labels = []
 
-        for plylst, song in self.features:
+        for plylst, song in self.features_ps:
             unique_plylst.add(plylst)
             plylst_dict[plylst].append(song)
 
+        # troch.tensor로 gpu메모리로 사용 가능할까?  torch.cat((a,b) , dim=0)
         for id in unique_plylst:
             label = np.zeros((1, self.num_item))[0]
             label[plylst_dict[id]] = 1
 
-            ply_ind = [plylst] * self.num_item
+            ply_ind = [id] * self.num_item
             item_ind = list(range(self.num_item))
 
             feature = list(zip(ply_ind, item_ind))
@@ -155,7 +155,9 @@ class NCFData(data.Dataset):
             all_features.extend(feature)
             all_labels.extend(label)
 
-            print(len(all_features), len(all_labels))
+        self.features = all_features
+        self.labels = all_labels
+
 
     def __len__(self):
         # return (self.num_ng + 1) * len(self.labels)

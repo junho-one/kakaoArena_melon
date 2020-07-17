@@ -56,6 +56,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 train_data, test_data, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.status)
 
+inv_user_map = {v: k for k, v in user_map.items()}
+inv_item_map = {v: k for k, v in item_map.items()}
+
+
 # train_dataset = data_utils.NCFData(
 # 		train_data, item_num, train_mat, 0, True, user_map, item_map)
 test_dataset = data_utils.NCFData(
@@ -65,7 +69,7 @@ test_dataset = data_utils.NCFData(
 # train_loader = data.DataLoader(train_dataset,
 # 		batch_size=args.batch_size, shuffle=True, num_workers=4)
 test_loader = data.DataLoader(test_dataset,
-		batch_size=args.batch_size, shuffle=False, num_workers=0)
+		batch_size=item_num, shuffle=False, num_workers=0)
 
 GMF_model = None
 MLP_model = None
@@ -78,6 +82,6 @@ model.cuda()
 model.load_state_dict(torch.load("./models/NeuMF-end_test_0.pth"))
 
 test_loader.dataset.all_sample_predict()
-
+evaluate.predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000)
 # 수정
 # acc = evaluate.predict(model, test_loader, args.top_k)
