@@ -168,8 +168,8 @@ dir_path = './Data'
 train_fn ='train.json'
 test_fn = 'test.json'
 valid_fn = 'val.json'
-plylst_boundary = 2
-song_boundary = 2
+plylst_boundary = 7
+song_boundary = 7
 
 DP = DataProcessor(dir_path, train_fn, test_fn, valid_fn,
                    plylst_boundary, song_boundary)

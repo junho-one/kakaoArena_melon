@@ -50,6 +50,14 @@ def metrics(model, test_loader, top_k):
 # 그럼 내꺼에서는 100개 뽑아내고 NDCG 비교?
 
 
+def predict(model, test_loader, top_k):
+	start_time = time.time()
+
+
+	end_time = time.time()
+	print("predict time : ", end_time-start_time)
+
+
 
 # def metrics(model, test_loader, top_k):
 # 	HR, NDCG = [], []

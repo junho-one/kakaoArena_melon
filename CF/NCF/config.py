@@ -11,9 +11,11 @@ assert model in ['MLP', 'GMF', 'NeuMF-end', 'NeuMF-pre']
 # paths
 main_path = './Data/'
 
-train_rating = main_path + '{}_train.txt'.format(dataset)
-test_question = main_path + '{}_val_question.txt'.format(dataset)
-test_answer = main_path + "{}_val_answer.txt".format(dataset)
+train_data = main_path + '{}_train.txt'.format(dataset)
+val_question = main_path + '{}_val_question.txt'.format(dataset)
+val_answer = main_path + "{}_val_answer.txt".format(dataset)
+
+test_question = main_path + "{}_test.txt".format(dataset)
 
 # test_negative = main_path + '{}.test.negative'.format(dataset)
 
