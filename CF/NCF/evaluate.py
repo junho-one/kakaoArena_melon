@@ -60,15 +60,21 @@ def predict(model, test_loader, inv_user_map, inv_item_map, top_k=100):
 		item = item.cuda()
 		predictions = model(user, item)
 
+		if len(user.unique()) > 1 :
+			print(user)
+			print(item)
+			print("??")
+			exit()
+
 		rating, indices = torch.topk(predictions, top_k)
 		recommends = torch.take(
 			item, indices).cpu().numpy().tolist()
 
-		userid = user[0].cpu().numpy().tolist()[0]
+		userid = user[0].cpu().numpy().tolist()
 
 		print("reccomed of {}".format(inv_user_map[userid]))
-		for idx, rec in enumerate(recommends,start=1) :
-			print("{} : {}".format(idx, inv_item_map[rec]))
+		# for idx, rec in enumerate(recommends,start=1) :
+		# 	print("{} : {}".format(idx, inv_item_map[rec]))
 
 
 

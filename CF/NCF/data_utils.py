@@ -158,6 +158,7 @@ class NCFData(data.Dataset):
         self.features = all_features
         self.labels = all_labels
 
+        return plylst_dict
 
     def __len__(self):
         # return (self.num_ng + 1) * len(self.labels)

@@ -82,6 +82,7 @@ model.cuda()
 model.load_state_dict(torch.load("./models/NeuMF-end_test_0.pth"))
 
 test_loader.dataset.all_sample_predict()
+
 evaluate.predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000)
 # 수정
 # acc = evaluate.predict(model, test_loader, args.top_k)
