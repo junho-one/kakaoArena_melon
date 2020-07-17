@@ -1,19 +1,27 @@
 import numpy as np
 import pandas as pd
 import os
+import random
 
+from collections import defaultdict
+import random
+import math
 
 class DataProcessor :
 
-    def __init__(self,dir_name, train_fn, test_fn, valid_fn):
+    def __init__(self,dir_name, train_fn, test_fn, valid_fn, ply_b, song_b):
 
         self.train = self.load_json(dir_name, train_fn)
         self.test = self.load_json(dir_name, test_fn)
         self.valid = self.load_json(dir_name, valid_fn)
+
         self.directory = dir_name
         self.train_fn = train_fn
         self.test_fn = test_fn
         self.valid_fn = valid_fn
+
+        self.plylst_boundary = ply_b
+        self.song_boundary = song_b
 
     def load_json(self, dir_name, file_name) :
 
@@ -34,7 +42,6 @@ class DataProcessor :
         plylst_song_map['songs'] = plylst_song_map['songs'].astype(str)
         del plylst_song_map_unnest
 
-        plylst_song_map['include'] = 1
         plylst_song_map['id'] = plylst_song_map['id'].astype(float)
         plylst_song_map['id'] = plylst_song_map['id'].astype(int)
         plylst_song_map['songs'] = plylst_song_map['songs'].astype(float)
@@ -69,7 +76,6 @@ class DataProcessor :
         del self.train['index_y']
         del self.train['plylst_cnt']
         del self.train['song_cnt']
-        self.train['include'] = 1
 
         print("After plylst nunique:{}, song nunique:{}\n".format(self.train['id'].nunique(),
                                                                 self.train['songs'].nunique()))
@@ -104,9 +110,56 @@ class DataProcessor :
         data.to_csv(path, index=False, header=None, sep="\t")
 
 
+    def splitValidation(self):
+        test_dict = defaultdict(list)
+        test_list = self.valid.values.tolist()
+
+        for idx, data in test_list:
+            test_dict[idx].append(data)
+
+        test_questions_dict = {}
+        test_answers_dict = {}
+
+        # question의 비율
+        ratios = [0.1, 0.3, 0.5, 0.75]
+
+        for idx, val in test_dict.items():
+
+            # question에만 plylst와 song이 들어가는 걸 방지하기 위해
+            if len(val) > 3  :
+                ratio = random.choice(ratios)
+                size = math.ceil(len(val) * ratio)
+
+                test_questions_dict[idx] = val[:size]
+                test_answers_dict[idx] = val[size:]
+
+            elif len(val) > 1 :
+                test_questions_dict[idx] = val[:1]
+                test_answers_dict[idx] = val[1:]
+
+        test_questions = []
+        for idx, val in test_questions_dict.items():
+            for da in val:
+                test_questions.append((idx, da))
+
+        test_answers = []
+        for idx, val in test_answers_dict.items():
+            for da in val:
+                test_answers.append((idx, da))
+
+        test_questions = pd.DataFrame(test_questions)
+        test_answers = pd.DataFrame(test_answers)
+
+        self.saveData(test_questions, "val_question")
+        self.saveData(test_answers, "val_answer")
+
+
     def run(self):
-        self.removeFewData(2,2)
+        self.removeFewData(self.plylst_boundary, self.song_boundary)
         self.removeOutOfTrain()
+
+        self.splitValidation()
+
         self.saveData(self.train, self.train_fn)
         self.saveData(self.valid, self.valid_fn)
         self.saveData(self.test, self.test_fn)
@@ -115,7 +168,9 @@ dir_path = './Data'
 train_fn ='train.json'
 test_fn = 'test.json'
 valid_fn = 'val.json'
+plylst_boundary = 2
+song_boundary = 2
 
-
-DP = DataProcessor(dir_path, train_fn, test_fn, valid_fn)
+DP = DataProcessor(dir_path, train_fn, test_fn, valid_fn,
+                   plylst_boundary, song_boundary)
 DP.run()
