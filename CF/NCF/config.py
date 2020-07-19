@@ -20,6 +20,10 @@ test_question = main_path + "{}_test.txt".format(dataset)
 # test_negative = main_path + '{}.test.negative'.format(dataset)
 
 model_path = './models/'
+pred_path = './preds/'
+train_log = './logs/train_log.txt'
+pred_log =  './logs/pred_log.txt'
+
 GMF_model_path = model_path + 'GMF.pth'
 MLP_model_path = model_path + 'MLP.pth'
 NeuMF_model_path = model_path + 'NeuMF.pth'

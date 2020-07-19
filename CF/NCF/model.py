@@ -29,13 +29,21 @@ class NCF(nn.Module):
 		self.embed_item_MLP = nn.Embedding(
 				item_num, factor_num * (2 ** (num_layers - 1)))
 
-
+		# 128 ---> 16
 		MLP_modules = []
-		for i in range(num_layers):
-			input_size = factor_num * (2 ** (num_layers - i))
+		input_size = factor_num * (2 ** num_layers)
+		for i in range(num_layers - 1):
 			MLP_modules.append(nn.Dropout(p=self.dropout))
-			MLP_modules.append(nn.Linear(input_size, input_size//2))
+			MLP_modules.append(nn.Linear(input_size, input_size * 2))
 			MLP_modules.append(nn.ReLU())
+			input_size = input_size * 2
+
+		for i in range(num_layers + 2):
+			MLP_modules.append(nn.Dropout(p=self.dropout))
+			MLP_modules.append(nn.Linear(input_size, input_size // 2))
+			MLP_modules.append(nn.ReLU())
+			input_size = input_size // 2
+
 		self.MLP_layers = nn.Sequential(*MLP_modules)
 
 		if self.model in ['MLP', 'GMF']:
@@ -112,7 +120,4 @@ class NCF(nn.Module):
 			concat = torch.cat((output_GMF, output_MLP), -1)
 
 		prediction = self.predict_layer(concat)
-		if self.training :
-			return prediction.view(-1)
-		else :
-			return torch.sigmoid(prediction).view(-1)
+		return prediction.view(-1)
