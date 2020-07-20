@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--batch_size",
 	type=int,
-	default=256,
+	default=1,
 	help="batch size for training")
 parser.add_argument("--top_k",
 	type=int,
@@ -72,10 +72,29 @@ if __name__ == "__main__":
 	inv_user_map = {v: k for k, v in user_map.items()}
 	inv_item_map = {v: k for k, v in item_map.items()}
 
+	print("TN",item_num)
+	print(max(user_map.keys()))
+	print(max(user_map.values()))
+	print(max(item_map.keys()))
+	print(max(item_map.values()))
+	print(max(inv_item_map.keys()))
+	print(max(inv_item_map.values()))
+	print(max(inv_user_map.keys()))
+	print(max(inv_user_map.values()))
+
+	# TN
+	# 192020
+	# 153428
+	# 117725
+	# 707986
+	# 192018
+	# 192018
+	# 707986
+	# 117725
+	# 153428
+
 	test_dataset = data_utils.NCFData(
 			test_question, item_num, train_mat, 0, False, user_map, item_map)
-
-	print("TN",item_num)
 
 	test_loader = data.DataLoader(test_dataset,
 			batch_size=args.batch_size, shuffle=False, num_workers=0)
@@ -87,17 +106,19 @@ if __name__ == "__main__":
 	model = model.NCF(user_num, item_num, args.factor_num, args.num_layers,
 							args.dropout, config.model, GMF_model, MLP_model)
 	model.cuda()
+	print(model)
+
 
 	test_loader.dataset.sample_all_user()
 
-
+	print("start predict")
 	for epoch in range(args.epochs) :
 		print("START :", epoch)
 		start_time = time.time()
 
 		logger.write_log(config.pred_log, "strart predict {} epoch".format(epoch))
 
-		model.load_state_dict(torch.load("./models/NeuMF-end_valid_"+str(epoch)+".pth"))
+		model.load_state_dict(torch.load('{}{}_{}_{}.pth'.format(config.model_path, config.model, args.dataset, epoch)))
 
 		if args.dataset == 'valid' :
 			metrics.hit(model, test_loader, test_question, test_answer)

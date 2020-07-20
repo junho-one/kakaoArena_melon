@@ -72,10 +72,12 @@ cudnn.benchmark = True
 if not os.path.exists(os.path.dirname(config.train_log)):
 	os.mkdir(os.path.dirname(config.train_log))
 
+print("dataset :",args.dataset)
 
 if __name__ == "__main__":
 	############################## PREPARE DATASET ##########################
 	print("Start train.py")
+	print(args.batch_size)
 
 	train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
 
@@ -127,7 +129,7 @@ if __name__ == "__main__":
 			item = item.cuda()
 			label = label.float().cuda()
 			model.zero_grad()
-
+			print("ZZZZ")
 			prediction = model(user, item)
 			loss = loss_function(prediction, label)
 			loss.backward()

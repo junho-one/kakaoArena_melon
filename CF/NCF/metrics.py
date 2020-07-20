@@ -75,6 +75,7 @@ def predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000):
 		recommends = set(item[0][predictions > 0].cpu().numpy().tolist())
 
 		userid = inv_user_map[user.unique().cpu().numpy().tolist()[0]]
+		# print(recommends)
 		recommends = [inv_item_map[item] for item in recommends]
 
 		# predictions.append({"id":userid, "songs":recommends})
@@ -85,7 +86,7 @@ def predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000):
 	return predict_dict
 
 
-def hit(model, test_loader, test_question, test_answer, top_k=100):
+def hit(model, test_loader, test_question, test_answer, top_k=1000):
 	# 한 유저당 모든 item 중에 탑 1000개를 뽑기?
 	cnt = 0
 	total_answers = 0

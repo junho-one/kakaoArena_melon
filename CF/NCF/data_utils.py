@@ -16,41 +16,45 @@ def load_all(dataset="valid"):
         usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
 
     # valid로도 predict할 수도 있으니 이부분도 바꿔야 할
-    if dataset == "valid":
-        test_question = pd.read_csv(
-            config.val_question,
-            sep='\t', header=None, names=['user', 'item'],
-            usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
+    # if dataset == "valid":
+    test_question = pd.read_csv(
+        config.val_question,
+        sep='\t', header=None, names=['user', 'item'],
+        usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
 
-        test_answer = pd.read_csv(
-            config.val_answer,
-            sep='\t', header=None, names=['user', 'item'],
-            usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
+    test_answer = pd.read_csv(
+        config.val_answer,
+        sep='\t', header=None, names=['user', 'item'],
+        usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
 
-        #  테스트셋을 question, answer로 나누고 question은 트레이닝 셋에 넣는다.
-        train_data = pd.concat([train_data, test_question])
-        test_question = test_question.values.tolist()
-        test_answer = test_answer.values.tolist()
+    #  테스트셋을 question, answer로 나누고 question은 트레이닝 셋에 넣는다.
+    train_data = pd.concat([train_data, test_question])
 
-    elif dataset == "test":
-        test_question = pd.read_csv(
+
+
+    if dataset == "test":
+
+        test_question_for_test = pd.read_csv(
             config.test_question,
             sep='\t', header=None, names=['user', 'item'],
             usecols=[0, 1], dtype={0: np.int32, 1: np.int32})
 
-        train_data = pd.concat([train_data, test_question])
-        test_question = test_question.values.tolist()
-        test_answer = None ## 바꿔야댐 이상한 값임
+        train_data = pd.concat([train_data, test_question, test_answer, test_question_for_test])
+        test_question = test_question_for_test
+        test_answer = pd.DataFrame()
+
 
     user_num, user_map = mapped(train_data['user'])
     item_num, item_map = mapped(train_data['item'])
+
     train_data = train_data.values.tolist()
+    test_question = test_question.values.tolist()
+    test_answer = test_answer.values.tolist()
 
     # 매핑해줘야함. 유니크한 개수는 10만인데 최대값은 15만. Embedd layer에서 값을 벗어난다.
     test_question = [(user_map[user], item_map[item]) for user, item in test_question]
     train_data = [(user_map[user], item_map[item]) for user, item in train_data]
-    if test_answer :
-        test_answer = [(user_map[user], item_map[item]) for user, item in test_answer]
+    test_answer = [(user_map[user], item_map[item]) for user, item in test_answer]
 
     # load ratings as a dok matrix
     train_mat = sp.dok_matrix((user_num, item_num), dtype=np.float32)
@@ -61,7 +65,7 @@ def load_all(dataset="valid"):
 
 
 def mapped(series) :
-    series_num = series.nunique()+1
+    series_num = series.nunique()
     series_unique = series.unique()
     series_map = dict()
 
