@@ -72,11 +72,11 @@ def predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000):
 		recommends = torch.take(
 			item, indices).cpu().numpy().tolist()
 
-		recommends = set(item[0][predictions > 0].cpu().numpy().tolist())
+		#recommends = set(item[0][predictions > 0].cpu().numpy().tolist())
 
-		userid = inv_user_map[user.unique().cpu().numpy().tolist()[0]]
+		userid = str(inv_user_map[user.unique().cpu().numpy().tolist()[0]])
 		# print(recommends)
-		recommends = [inv_item_map[item] for item in recommends]
+		recommends = [str(inv_item_map[item]) for item in recommends]
 
 		# predictions.append({"id":userid, "songs":recommends})
 		predict_dict[userid].append(recommends)

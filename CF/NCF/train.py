@@ -129,7 +129,6 @@ if __name__ == "__main__":
 			item = item.cuda()
 			label = label.float().cuda()
 			model.zero_grad()
-			print("ZZZZ")
 			prediction = model(user, item)
 			loss = loss_function(prediction, label)
 			loss.backward()
