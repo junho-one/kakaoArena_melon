@@ -13,7 +13,7 @@ from data_utils import melData
 
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '4'
+os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(device)
@@ -33,18 +33,18 @@ if __name__ == "__main__":
     training_epochs = 15
     batch_size = 100
 
-    data_set = melData("./arena_mel/")
+    data_set = melData("/root/data/arena_mel/")
 
     data_loader = data.DataLoader(dataset=data_set,
                                               batch_size=batch_size,
                                               shuffle=True,
-                                              num_workers=1)
+                                              num_workers=0)
 
-    # model = CNN().to(device)
-    # criterion = torch.nn.CrossEntropyLoss().to(device)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    model = CNN().to(device)
+    criterion = torch.nn.CrossEntropyLoss().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     #
-    # total_batch = len(data_loader)
+    total_batch = len(data_loader)
     # print('총 배치의 수 : {}, 배치사이즈: {}'.format(total_batch, batch_size))
 
 
@@ -54,17 +54,14 @@ if __name__ == "__main__":
         for X, Y in data_loader: # 미니 배치 단위로 꺼내온다. X는 미니 배치, Y느 ㄴ레이블.
             # image is already size of (28x28), no reshape
             # label is not one-hot encoded
-            X = X.to(device)
-            Y = Y.to(device)
-            print(Y)
 
-            # optimizer.zero_grad()
-            # hypothesis = model(X)
-            # cost = criterion(hypothesis, Y)
-            # cost.backward()
-            # optimizer.step()
+            optimizer.zero_grad()
+            hypothesis = model(X)
+            cost = criterion(hypothesis, Y)
+            cost.backward()
+            optimizer.step()
             #
-            # avg_cost += cost / total_batch
+            avg_cost += cost / total_batch
 
         print('[Epoch: {:>4}] cost = {:>.9}'.format(epoch + 1, avg_cost))
 
@@ -78,3 +75,4 @@ if __name__ == "__main__":
 #     correct_prediction = torch.argmax(prediction, 1) == Y_test
 #     accuracy = correct_prediction.float().mean()
 #     print('Accuracy:', accuracy.item())
+

@@ -17,18 +17,26 @@ class melData(data.Dataset):
                 """
         self.dir_list = glob.glob(os.path.join(data_path,"*"))
         self.transform = transforms.Compose([ transforms.ToPILImage(),transforms.Resize(192,449), transforms.ToTensor() ])
-        self.minNum = 0
-        self.maxNum = 10
-
         self.image_paths = []
+
         for dir in self.dir_list :
             files = glob.glob(os.path.join(dir,"*"))
             self.image_paths.extend(files)
 
         print(len(self.image_paths))
+        print(len(self.dir_list))
 
-    def MinMaxScale(self, array):
-        return (array - self.minNum)/(self.maxNum-self.minNum)
+    def dir_max(self, num) :
+        maxN = -9999
+        minN = 9999
+        files = glob.glob(os.path.join(self.dir_list[num],"*"))
+        print(len(files))
+        for path in files :
+            image = np.load(path)
+            maxN = max(maxN, image.max())
+            minN = min(minN, image.min())
+
+        return minN, maxN, len(files)
 
     def __len__(self):
         return len(self.image_paths)
@@ -42,6 +50,10 @@ class melData(data.Dataset):
 
         image= np.repeat(image[np.newaxis,:,:],1,axis=2)
 
+
+        # image = self.transform(image)
+
         label = torch.tensor(int(os.path.basename(self.image_paths[idx]).split(".")[0]))
         # print(image.shape)
         return image, label
+

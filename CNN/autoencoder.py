@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,7 +17,7 @@ from data_utils import melData
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-batch_size = 256
+batch_size = 128
 learning_rate = 0.0002
 num_epoch = 31
 
@@ -24,7 +26,7 @@ data_set = melData("/root/data/arena_mel/")
 data_loader = data.DataLoader(dataset=data_set,
                               batch_size=batch_size,
                               shuffle=True,
-                              num_workers=2)
+                              num_workers=1)
 
 class Encoder(nn.Module):
     def __init__(self):
@@ -57,7 +59,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer2(out)
-        out = out.view(batch_size, -1)
+        out = out.view(global_batch_size, -1)
         return out
 
 
@@ -81,7 +83,7 @@ class Decoder(nn.Module):
         )
 
     def forward(self, x):
-        out = x.view(batch_size, 256, 3, 36)
+        out = x.view(global_batch_size, 256, 3, 36)
         out = self.layer1(out)
         out = self.layer2(out)
         return out
@@ -93,29 +95,33 @@ print(device)
 encoder = Encoder().to(device)
 decoder = Decoder().to(device)
 
-# paprameter를 �~O~Y�~K~\�~W~P �~U~Y�~J��~K~\�~B�기�~\~D�~U� 묶�~V��~F~T�~U��~U~\�~K�.
+# paprameter를 동시에 학습시키기위해 묶어놔야한다.
 parameters = list(encoder.parameters())+ list(decoder.parameters())
 
 loss_func = nn.MSELoss()
 optimizer = torch.optim.Adam(parameters, lr=learning_rate)
 
-
 for i in range(num_epoch):
     print("EPOCH : {}".format(i))
+    cnt = 0
+    #for image, label in tqdm(data_loader) :
     for image, label in data_loader :
         optimizer.zero_grad()
         image = image.to(device)
-
+        global_batch_size = len(image)
         output = encoder(image)
         output = decoder(output)
         loss = loss_func(output, image)
         loss.backward()
         optimizer.step()
-
-
-    if i % 10 == 0 :
+        cnt += 1
+        if cnt % 100 == 0 :
+            print(cnt*batch_size)
+    if i % 3 == 0 :
         torch.save(encoder.state_dict(),
                    './models/encoder_{}.pth'.format(i))
         torch.save(decoder.state_dict(),
                    './models/decoder_{}.pth'.format(i))
+
+
 
