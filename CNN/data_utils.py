@@ -10,7 +10,7 @@ import os
 
 class melData(data.Dataset):
 
-    def __init__(self, data_path):
+    def __init__(self, data_path, is_training=True):
         super(melData, self).__init__()
         """ Note that the labels are only useful when training, we thus 
                         add them in the ng_sample() function.
@@ -18,42 +18,59 @@ class melData(data.Dataset):
         self.dir_list = glob.glob(os.path.join(data_path,"*"))
         self.transform = transforms.Compose([ transforms.ToPILImage(),transforms.Resize(192,449), transforms.ToTensor() ])
         self.image_paths = []
+        self.is_training = is_training
+        self.minVal = -100
+        self.maxVal = 26.924
 
         for dir in self.dir_list :
             files = glob.glob(os.path.join(dir,"*"))
             self.image_paths.extend(files)
 
-        print(len(self.image_paths))
-        print(len(self.dir_list))
+        self.image_paths = np.array(sorted(self.image_paths, key=self.natural_keys))
 
-    def dir_max(self, num) :
-        maxN = -9999
-        minN = 9999
-        files = glob.glob(os.path.join(self.dir_list[num],"*"))
-        print(len(files))
-        for path in files :
-            image = np.load(path)
-            maxN = max(maxN, image.max())
-            minN = min(minN, image.min())
+    def natural_keys(self, text):
+        text = text.split("/")[-1]
+        text = text.split(".")[0]
+        return int(text)
+    
 
-        return minN, maxN, len(files)
-
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        # image = torch.from_numpy(np.load(self.image_paths[idx]))
+    def load_image(self, idx):
+       
+        def MinMaxScale(array) :
+            return (array - self.minVal) / (self.maxVal - self.minVal)
+       
         image = np.load(self.image_paths[idx])
-
         if image.shape[1] != 576:
+            # image = MinMaxScale(np.resize(image, (48,576)))
             image = np.resize(image, (48,576))
 
-        image= np.repeat(image[np.newaxis,:,:],1,axis=2)
+        return np.repeat(image[np.newaxis,:,:],1,axis=2)
+
+    def make_batch(self, items, batch_size=128):
+        self.images = []
+        cnt = 0
+        tmp = []
+        for item in items[0] :
+            cnt += 1
+            tmp.append(self.load_image(int(item)))
+
+            if cnt == batch_size :
+                self.images.append(torch.tensor(tmp))
+                tmp = []
+        
+        if tmp :
+            self.images.append(torch.tensor(tmp))
 
 
-        # image = self.transform(image)
+    def __len__(self):
+        if self.is_training :
+            return len(self.image_paths)
+        else :
+            return len(self.images)
 
-        label = torch.tensor(int(os.path.basename(self.image_paths[idx]).split(".")[0]))
-        # print(image.shape)
-        return image, label
+    def __getitem__(self, idx):
+        if self.is_training :
+            return self.load_image(idx)
+        else :
+            return self.images[idx]
 
