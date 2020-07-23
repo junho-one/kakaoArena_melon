@@ -44,10 +44,16 @@ class melData(data.Dataset):
             # image = MinMaxScale(np.resize(image, (48,576)))
             image = np.resize(image, (48,576))
 
-        return np.repeat(image[np.newaxis,:,:],1,axis=2)
+        #return np.repeat(image[np.newaxis,:,:],1,axis=2)
+        return np.reshape(image, (1,)+image.shape)
+
+    def make_user(self, user) :
+        image = self.load_image(int(user))
+        return torch.tensor(np.reshape(image, (1,)+image.shape))
 
     def make_batch(self, items, batch_size=128):
         self.images = []
+        
         cnt = 0
         tmp = []
         for item in items[0] :
