@@ -39,12 +39,14 @@ data_set = melData("/root/data/arena_mel/", is_training=False)
 encoder = Encoder().cuda()
 encoder.load_state_dict(torch.load('./models/encoder_6.pth'))
 
+answer = {}
+
 for user_id, item_ids in predictions.items() :
     print("USER ID : {}".format(user_id))
     item_ids = item_ids[0]
 
     user = data_set.make_user(user_id)
-    data_set.make_batch(item_ids, batch_size=512)
+    data_set.make_batch(item_ids, batch_size=256)
     
     user = encoder(user.cuda())
     
@@ -53,8 +55,13 @@ for user_id, item_ids in predictions.items() :
         items = torch.cat([items, encoder(X.cuda())])
     
     recommends= get_recommends(user,items,item_ids,top=75)
-    print(recommends[:10])
+    #print(recommends[:10])
+    answer[user] = recommends
 
 
 elapsed_time = time.time() - start_time
 print("The time elapse is {}".format(time.strftime("%H: %M: %S", time.gmtime(elapsed_time))))
+
+
+with open(os.path.join("./pred_top75_.txt"), "w") as fp :
+    fp.write(json.dumps(answer))
