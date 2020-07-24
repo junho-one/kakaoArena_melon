@@ -10,7 +10,7 @@ import os
 
 class melData(data.Dataset):
 
-    def __init__(self, data_path, is_training=True):
+    def __init__(self, data_path, batch_size=128, is_training=True):
         super(melData, self).__init__()
         """ Note that the labels are only useful when training, we thus 
                         add them in the ng_sample() function.
@@ -21,6 +21,7 @@ class melData(data.Dataset):
         self.is_training = is_training
         self.minVal = -100
         self.maxVal = 26.924
+        self.batch_size = batch_size
 
         for dir in self.dir_list :
             files = glob.glob(os.path.join(dir,"*"))
@@ -32,13 +33,32 @@ class melData(data.Dataset):
         text = text.split("/")[-1]
         text = text.split(".")[0]
         return int(text)
-    
+
+    def load_all_image(self, paths) :
+        self.image_cache = {}
+        for path in paths :
+            image_num = int(path.split("/")[-1].split(".")[0])
+            self.image_cache[image_num] = self.load_image(image_num)
+        print("LOAD ALL",len(self.image_cache))
+
+    def load_image_cache(self, idx) :
+        return self.image_cache[idx]
+
+    def check_image_cache(self, idx) :
+        #print(self.image_cache.keys())
+        #print(len(self.image_cache))
+        #print("CHECK IMAGE",int(idx), idx, type(idx))
+        #print(self.image_cache[int(idx)])
+        if self.image_cache.get(int(idx)) is None :
+            return False
+        else :
+            return True
 
     def load_image(self, idx):
-       
+
         def MinMaxScale(array) :
             return (array - self.minVal) / (self.maxVal - self.minVal)
-       
+
         image = np.load(self.image_paths[idx])
         if image.shape[1] != 576:
             # image = MinMaxScale(np.resize(image, (48,576)))
@@ -53,20 +73,46 @@ class melData(data.Dataset):
 
     def make_batch(self, items, batch_size=128):
         self.images = []
-        
         cnt = 0
         tmp = []
-        for item in items[0] :
+        for item in items :
+            cnt += 1
+            
+            if self.check_image_cache(int(item)) : 
+                tmp.append(self.load_image_cache(int(item)))
+            else :
+                tmp.append(self.load_image(int(item)))
+
+            if cnt == batch_size :
+                #iprint("TF",len(tmp))
+                self.images.append(torch.from_numpy(np.stack(tmp)))
+                tmp = []
+                cnt = 0
+
+        if tmp :
+            self.images.append(torch.from_numpy(np.stack(tmp)))
+    
+    def make_batch_v2(self, items, batch_size=128):
+        self.images = []
+        cnt = 0
+        tmp = []
+        for item in items :
             cnt += 1
             tmp.append(self.load_image(int(item)))
 
             if cnt == batch_size :
-                self.images.append(torch.tensor(tmp))
+                #iprint("TF",len(tmp))
+                self.images.append(np.stack(tmp))
                 tmp = []
-        
-        if tmp :
-            self.images.append(torch.tensor(tmp))
+                cnt = 0
 
+        if tmp :
+            self.images.append(np.stack(tmp))
+
+        #self.images = np.stack(self.images)
+        #print(len(self.images), self.images[0].shape)
+
+        #print("ZZ", len(self.images), len(self.images[0]), self.images[0].shape, self.images[1].shape)
 
     def __len__(self):
         if self.is_training :

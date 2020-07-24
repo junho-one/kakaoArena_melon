@@ -14,9 +14,9 @@ import os
 
 from data_utils import melData
 
-from model import Encoder, Decoder
+from origin_model import Encoder, Decoder
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "5"
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
 batch_size = 256
 learning_rate = 0.0002
@@ -27,12 +27,21 @@ data_set = melData("/root/data/arena_mel/")
 data_loader = data.DataLoader(dataset=data_set,
                               batch_size=batch_size,
                               shuffle=True,
-                              num_workers=1)
+                              num_workers=0)
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
+#a=time.time()
+#idx = 0
+#for image in data_loader :
+#    idx+=1
+#    if idx % 100 == 0 :
+#        print(idx)
+#        print(image.size())
+#print("TIME : ",time.time()-a)
+#exit()
 encoder = Encoder().to(device)
 decoder = Decoder().to(device)
 
@@ -60,9 +69,9 @@ for i in range(num_epoch):
             print(cnt*batch_size)
     if i % 3 == 0 :
         torch.save(encoder.state_dict(),
-                   './models/encoder_{}.pth'.format(i))
+                   './models/encoder_flat_{}.pth'.format(i))
         torch.save(decoder.state_dict(),
-                   './models/decoder_{}.pth'.format(i))
+                   './models/decoder_flat_{}.pth'.format(i))
 
 
 
