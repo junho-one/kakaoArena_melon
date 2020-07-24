@@ -77,7 +77,7 @@ print("dataset :",args.dataset)
 if __name__ == "__main__":
 	############################## PREPARE DATASET ##########################
 	print("Start train.py")
-	print(args.batch_size)
+	logger.write_log(config.train_log, "The train {} num_ng, {} epochs".format(args.num_ng,args.epochs))
 
 	train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
 
@@ -149,3 +149,4 @@ if __name__ == "__main__":
 		logger.write_log(config.train_log, "The time elapse of epoch {:03d}".format(epoch) + " is: " +
 				time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
 		logger.write_log(config.train_log, "-------------------------------------")
+

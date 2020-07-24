@@ -67,75 +67,55 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 if __name__ == "__main__":
 
-	train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
+	
+        logger.write_log(config.pred_log, "strart predict file 100 num_ng, total {} epoch".format(args.epochs))
 
-	inv_user_map = {v: k for k, v in user_map.items()}
-	inv_item_map = {v: k for k, v in item_map.items()}
+        train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
 
-	print("TN",item_num)
-	print(max(user_map.keys()))
-	print(max(user_map.values()))
-	print(max(item_map.keys()))
-	print(max(item_map.values()))
-	print(max(inv_item_map.keys()))
-	print(max(inv_item_map.values()))
-	print(max(inv_user_map.keys()))
-	print(max(inv_user_map.values()))
+        inv_user_map = {v: k for k, v in user_map.items()}
+        inv_item_map = {v: k for k, v in item_map.items()}
 
-	# TN
-	# 192020
-	# 153428
-	# 117725
-	# 707986
-	# 192018
-	# 192018
-	# 707986
-	# 117725
-	# 153428
-
-	test_dataset = data_utils.NCFData(
+        test_dataset = data_utils.NCFData(
 			test_question, item_num, train_mat, 0, False, user_map, item_map)
 
-	test_loader = data.DataLoader(test_dataset,
+        test_loader = data.DataLoader(test_dataset,
 			batch_size=args.batch_size, shuffle=False, num_workers=0)
 
-	GMF_model = None
-	MLP_model = None
-
-	# 모델의 초기값 맞춰줘야 하기에 factor_num같은거 인자로 받아서 씀
-	model = model.NCF(user_num, item_num, args.factor_num, args.num_layers,
-							args.dropout, config.model, GMF_model, MLP_model)
-	model.cuda()
-	print(model)
+        GMF_model = None
+        MLP_model = None
+        
+        model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, args.dropout, config.model, GMF_model, MLP_model)
+        model.cuda()
+        print(model)
 
 
-	test_loader.dataset.sample_all_user()
+        test_loader.dataset.sample_all_user()
 
-	print("start predict")
-	for epoch in range(args.epochs) :
-		print("START :", epoch)
-		start_time = time.time()
+        print("start predict")
+        for epoch in range(4,args.epochs) :
+                print("START :", epoch)
+                start_time = time.time()
 
-		logger.write_log(config.pred_log, "strart predict {} epoch".format(epoch))
+                logger.write_log(config.pred_log, "strart predict {} epoch".format(epoch))
 
-		model.load_state_dict(torch.load('{}{}_{}_{}.pth'.format(config.model_path, config.model, args.dataset, epoch)))
+                model.load_state_dict(torch.load('{}{}_{}_{}.pth'.format(config.model_path, config.model, args.dataset, epoch)))
 
-		if args.dataset == 'valid' :
-			metrics.hit(model, test_loader, test_question, test_answer)
-		elif args.dataset == 'test' :
-			predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
+                if args.dataset == 'valid' :
+                        metrics.hit(model, test_loader, test_question, test_answer)
+                elif args.dataset == 'test' :
+                        predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
 
-		if args.dataset == 'test':
-			if not os.path.exists(config.pred_path):
-				os.mkdir(config.pred_path)
+                if args.dataset == 'test':
+                        if not os.path.exists(config.pred_path):
+                                os.mkdir(config.pred_path)
 
-			with open(os.path.join(config.pred_path, "pred_{}.txt".format(epoch)), "w") as fp :
-				fp.write(json.dumps(predictions))
+                        with open(os.path.join(config.pred_path, "pred_{}.txt".format(epoch)), "w") as fp :
+                                fp.write(json.dumps(predictions))
 
-		elapsed_time = time.time() - start_time
-		logger.write_log(config.pred_log, "The time elapse of epoch {:03d}".format(epoch) + " is: " +
-				time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
-		logger.write_log(config.pred_log, "-------------------------------------")
+                elapsed_time = time.time() - start_time
+                logger.write_log(config.pred_log, "The time elapse of epoch {:03d}".format(epoch) + " is: " +
+                        time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
+                logger.write_log(config.pred_log, "-------------------------------------")
 
 # evaluate.predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000)
 # 수정
