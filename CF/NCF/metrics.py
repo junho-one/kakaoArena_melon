@@ -22,33 +22,26 @@ def ndcg(gt_item, pred_items):
 
 def accuracy(model, test_loader, top_k):
 
-	start_time = time.time()
-	all_predictions = []
-	all_labels = []
+        start_time = time.time()
+        all_predictions = []
+        all_labels = []
 
-	for user, item, label in test_loader:
-		user = user.cuda()
-		item = item.cuda()
+        for user, item, label in test_loader:
+                user = user.cuda()
+                item = item.cuda()
 
-		predictions = model(user, item)
-		predictions = torch.round(torch.sigmoid(predictions)).cpu().data.numpy()
-		label = np.array(label)
+                predictions = model(user, item)
+                predictions = torch.round(torch.sigmoid(predictions)).cpu().data.numpy()
+                label = np.array(label)
 
-		all_predictions.extend(predictions)
-		all_labels.extend(label)
+                all_predictions.extend(predictions)
+                all_labels.extend(label)
 
+        logger.write_log(config.train_log, "eval time : {}".format(end_time-start_time))
 
-	end_time = time.time()
-	logger.write_log(config.train_log, "eval time : {}".format(end_time-start_time))
-
-	logger.write_log(config.train_log, "recall : {}".format(recall_score(all_predictions, all_labels)))
-	logger.write_log(config.train_log, "precision : {}".format(precision_score(all_predictions, all_labels)))
-	logger.write_log(config.train_log, "accuracy : {}".format(accuracy_score(all_predictions, all_labels)))
-
-
-# 1개 답인데 10개 뽑음 -> 100개 답이면 1000개?
-# 그럼 내꺼에서는 100개 뽑아내고 NDCG 비교?
-
+        logger.write_log(config.train_log, "recall : {}".format(recall_score(all_labels,all_predictions)))
+        logger.write_log(config.train_log, "precision : {}".format(precision_score(all_labels, all_predictions)))
+        logger.write_log(config.train_log, "accuracy : {}".format(accuracy_score(all_labels, all_predictions)))
 
 def predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000):
 	start_time = time.time()
