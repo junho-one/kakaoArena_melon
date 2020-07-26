@@ -2,6 +2,7 @@ import os
 import time
 import argparse
 import numpy as np
+from collections import defaultdict
 
 import torch
 import torch.nn as nn
@@ -90,8 +91,11 @@ if __name__ == "__main__":
 			batch_size=args.batch_size, shuffle=True, num_workers=4)
 
 	test_loader = data.DataLoader(test_dataset,
-			batch_size=args.batch_size, shuffle=False, num_workers=0)
+			batch_size=args.batch_size, shuffle=False, num_workers=1)
 
+	test_question_dict = defaultdict(list)
+	for user, item in test_question:
+		test_question_dict[user].append(item)
 
 	########################### CREATE MODEL #################################
 	if config.model == 'NeuMF-pre':
@@ -135,8 +139,8 @@ if __name__ == "__main__":
 			optimizer.step()
 			uinum += 1
 
-		if args.dataset == 'valid' :
-			acc = metrics.accuracy(model, test_loader, args.top_k)
+		#if args.dataset == 'valid' :
+			#acc = metrics.hit(model,test_loader,test_question,test_answer, args.top_k)
 
 		if args.out:
 			if not os.path.exists(config.model_path):
@@ -149,4 +153,5 @@ if __name__ == "__main__":
 		logger.write_log(config.train_log, "The time elapse of epoch {:03d}".format(epoch) + " is: " +
 				time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
 		logger.write_log(config.train_log, "-------------------------------------")
+
 

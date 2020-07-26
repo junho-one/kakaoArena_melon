@@ -79,7 +79,7 @@ if __name__ == "__main__":
 			test_question, item_num, train_mat, 0, False, user_map, item_map)
 
         test_loader = data.DataLoader(test_dataset,
-			batch_size=args.batch_size, shuffle=False, num_workers=0)
+			batch_size=args.batch_size, shuffle=False, num_workers=1)
 
         GMF_model = None
         MLP_model = None
@@ -109,7 +109,7 @@ if __name__ == "__main__":
                         if not os.path.exists(config.pred_path):
                                 os.mkdir(config.pred_path)
 
-                        with open(os.path.join(config.pred_path, "pred_{}.txt".format(epoch)), "w") as fp :
+                        with open(os.path.join(config.pred_path, "pred_10_{}.txt".format(epoch)), "w") as fp :
                                 fp.write(json.dumps(predictions))
 
                 elapsed_time = time.time() - start_time
