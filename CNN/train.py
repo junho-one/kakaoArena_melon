@@ -14,7 +14,7 @@ import os
 
 from data_utils import melData
 
-from origin_model import Encoder, Decoder
+from model import Encoder, Decoder
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
@@ -69,9 +69,9 @@ for i in range(num_epoch):
             print(cnt*batch_size)
     if i % 3 == 0 :
         torch.save(encoder.state_dict(),
-                   './models/encoder_flat_{}.pth'.format(i))
+                   './models/encoder_{}.pth'.format(i))
         torch.save(decoder.state_dict(),
-                   './models/decoder_flat_{}.pth'.format(i))
+                   './models/decoder_{}.pth'.format(i))
 
 
 

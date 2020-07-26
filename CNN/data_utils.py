@@ -36,9 +36,10 @@ class melData(data.Dataset):
 
     def load_all_image(self, paths) :
         self.image_cache = {}
-        for path in paths :
-            image_num = int(path.split("/")[-1].split(".")[0])
-            self.image_cache[image_num] = self.load_image(image_num)
+        for num,cnt in paths :
+            #image_num = int(path.split("/")[-1].split(".")[0])
+            num = int(num)
+            self.image_cache[num] = self.load_image(num)
         print("LOAD ALL",len(self.image_cache))
 
     def load_image_cache(self, idx) :
