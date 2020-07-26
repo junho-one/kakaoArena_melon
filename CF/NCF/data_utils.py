@@ -5,7 +5,6 @@ import scipy.sparse as sp
 import torch.utils.data as data
 import torch
 import config
-from collections import defaultdict
 
 
 def load_all(dataset="valid"):
@@ -164,4 +163,5 @@ class NCFData(data.Dataset):
             label = torch.zeros(self.num_item)
 
         return user, item, label
+
 
