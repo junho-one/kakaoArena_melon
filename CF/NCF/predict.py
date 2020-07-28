@@ -102,6 +102,7 @@ if __name__ == "__main__":
 
                 if args.dataset == 'valid' :
                         metrics.hit(model, test_loader, test_question, test_answer)
+                        predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
                 elif args.dataset == 'test' :
                         predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
 
@@ -110,6 +111,13 @@ if __name__ == "__main__":
                                 os.mkdir(config.pred_path)
 
                         with open(os.path.join(config.pred_path, "pred_10_{}.txt".format(epoch)), "w") as fp :
+                                fp.write(json.dumps(predictions))
+
+                if args.dataset == 'valid':
+                        if not os.path.exists(config.pred_path):
+                                os.mkdir(config.pred_path)
+
+                        with open(os.path.join(config.pred_path, "pred_valid_10_{}.txt".format(epoch)), "w") as fp :
                                 fp.write(json.dumps(predictions))
 
                 elapsed_time = time.time() - start_time

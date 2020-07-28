@@ -73,8 +73,6 @@ for user_id, item_ids in predictions.items() :
     del items
     with open("./pred_top_100.txt", "a+") as fp :
         fp.write("{} : {}\n".format(user_id, recommends))
-    #print(recommends[:10])
-    #answer[user] = recommends
 
 elapsed_time = time.time() - start_time
 print("The time elapse is {}".format(time.strftime("%H: %M: %S", time.gmtime(elapsed_time))))
