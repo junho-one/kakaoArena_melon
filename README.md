@@ -65,3 +65,25 @@ python predict.py
 
 
 ## 2. CNN based AutoEncoder (content based filtering)
+
+### 2.1 훈련
+```
+1. python train.py
+--image_folder Data/arena_mel
+--batch_size 256
+--lr 0.001
+--epochs 10
+```
+CNN 기반의 오토인코더를 사용하여 인코더를 학습시킨다.
+이때 인코더의 출력은 5000 차원의 벡터(임베딩 벡터)가 된다.
+학습 전에 카카오 아레나 사이트에 접속하여 mel spectogram 이미지 파일을 다운받은 후 CNN/Data 폴더에 넣어줘야 한다.
+
+### 2.2 예측
+```
+python predict.py
+--predictions_file ../CF/NCF/preds/pred.txt
+--image_folder Data/arena_mel
+--pred_path preds/
+```
+user의 embedding vector는 plylst에 속한 song들의 embedding vector의 평균값이다.
+이 user의 임베딩 벡터와 predictions에서 추천된 song들의 임베딩벡터간의 유사도를 구한 후 유사도가 높은 100개만을 추려 최종 추천 아이템으로 선택한다.
