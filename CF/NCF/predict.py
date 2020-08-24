@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     #####################PREPARE DATA###########################
     print("Start predict.py, dataset : {}".format(args.dataset))
-    logger.write_log(config.pred_log, "strart to predict file".format(args.epochs))
+    logger.write_log(config.pred_log, "strart to predict file")
 
     train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
 
@@ -72,11 +72,12 @@ if __name__ == "__main__":
     GMF_model = None
     MLP_model = None
 
-    model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, args.dropout, config.model, GMF_model, MLP_model)
+    model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, 0, config.model, GMF_model, MLP_model)
     model.load_state_dict(torch.load('{}{}_{}.pth'.format(config.model_path, config.model, args.dataset)))
     model.cuda()
 
     ##########################PREDICT#############################
+    model.eval()
     test_loader.dataset.all_sample_test()
 
     if args.dataset == 'test' :

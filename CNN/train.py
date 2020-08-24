@@ -1,78 +1,86 @@
 from tqdm import tqdm
-
-import numpy as np
+import argparse
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.init as init
-import torchvision.datasets as dset
 import torch.utils.data as data
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
 import os
 
 from data_utils import melData
-
 from model import Encoder, Decoder
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
-batch_size = 256
-learning_rate = 0.0002
-num_epoch = 31
-
-data_set = melData("/root/data/arena_mel/")
-
-data_loader = data.DataLoader(dataset=data_set,
-                              batch_size=batch_size,
-                              shuffle=True,
-                              num_workers=0)
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
-
-#a=time.time()
-#idx = 0
-#for image in data_loader :
-#    idx+=1
-#    if idx % 100 == 0 :
-#        print(idx)
-#        print(image.size())
-#print("TIME : ",time.time()-a)
-#exit()
-encoder = Encoder().to(device)
-decoder = Decoder().to(device)
-
-# paprameter를 동시에 학습시키기위해 묶어놔야한다.
-parameters = list(encoder.parameters())+ list(decoder.parameters())
-
-loss_func = nn.MSELoss()
-optimizer = torch.optim.Adam(parameters, lr=learning_rate)
-
-for i in range(num_epoch):
-    print("EPOCH : {}".format(i))
-    cnt = 0
-    #for image, label in tqdm(data_loader) :
-    for image in data_loader :
-        optimizer.zero_grad()
-        image = image.to(device)
-        global_batch_size = len(image)
-        output = encoder(image)
-        output = decoder(output)
-        loss = loss_func(output, image)
-        loss.backward()
-        optimizer.step()
-        cnt += 1
-        if cnt % 100 == 0 :
-            print(cnt*batch_size)
-    if i % 3 == 0 :
-        torch.save(encoder.state_dict(),
-                   './models/encoder_{}.pth'.format(i))
-        torch.save(decoder.state_dict(),
-                   './models/decoder_{}.pth'.format(i))
+def parser_add_argument	( parser ) :
+    parser.add_argument("--image_folder",
+        type=str,
+        default="Data/arena_mel/",
+        help="folder in which mel-spectograms are saved")
+    parser.add_argument("--lr",
+        type=float,
+        default=0.001,
+        help="learning rate")
+    parser.add_argument("--dropout",
+        type=float,
+        default=0.0,
+        help="dropout rate")
+    parser.add_argument("--batch_size",
+        type=int,
+        default=256,
+        help="batch size for training")
+    parser.add_argument("--epochs",
+        type=int,
+        default=10,
+        help="training epoches")
+    parser.add_argument("--gpu",
+        type=str,
+        default="0",
+        help="gpu card ID")
+    return parser
 
 
 
+if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser = parser_add_argument( parser )
+    args = parser.parse_args()
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+    data_set = melData(args.image_folder)
+    data_loader = data.DataLoader(dataset=data_set,
+                                  batch_size=args.batch_size,
+                                  shuffle=True,
+                                  num_workers=0)
+
+    encoder = Encoder().to(device)
+    decoder = Decoder().to(device)
+    encoder.train()
+    decoder.train()
+
+    # paprameter를 동시에 학습시키기위해 묶어놔야한다.
+    parameters = list(encoder.parameters())+ list(decoder.parameters())
+
+    loss_func = nn.MSELoss()
+    optimizer = torch.optim.Adam(parameters, lr=args.lr)
+
+    for i in range(args.epochs):
+        print("EPOCH : {}".format(i))
+
+        for image in tqdm(data_loader) :
+            optimizer.zero_grad()
+            image = image.to(device)
+            global_batch_size = len(image)
+            output = encoder(image)
+            output = decoder(output)
+
+            loss = loss_func(output, image)
+            loss.backward()
+            optimizer.step()
+
+        if i % 3 == 0 :
+            torch.save(encoder.state_dict(),
+                       './models/encoder_{}.pth'.format(i))
+            torch.save(decoder.state_dict(),
+                       './models/decoder_{}.pth'.format(i))
