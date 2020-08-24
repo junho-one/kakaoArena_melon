@@ -79,17 +79,17 @@ if __name__ == "__main__":
 
 	train_dataset = data_utils.NCFData(
 			train_data, item_num, train_mat, args.num_ng, True, user_map, item_map)
-	test_dataset = data_utils.NCFData(
-			test_answer, item_num, train_mat, 0, False, user_map, item_map)
-
 	train_loader = data.DataLoader(train_dataset,
 			batch_size=args.batch_size, shuffle=True, num_workers=4)
-	test_loader = data.DataLoader(test_dataset,
-			batch_size=1, shuffle=False, num_workers=1)
 
-	test_question_dict = defaultdict(list)
-	for user, item in test_question:
-		test_question_dict[user].append(item)
+	if test_answer :
+		test_dataset = data_utils.NCFData(
+				test_answer, item_num, train_mat, 0, False, user_map, item_map)
+		test_loader = data.DataLoader(test_dataset,
+				batch_size=1, shuffle=False, num_workers=1)
+	else :
+		test_loader = None
+
 
 	########################### CREATE MODEL #################################
 	if config.model == 'NeuMF-pre':
@@ -113,10 +113,6 @@ if __name__ == "__main__":
 
 	########################## TRAINING #####################################
 
-	# 모델에서 나오는 top_k개의
-	if args.dataset == 'valid' :
-		test_loader.dataset.all_sample_test()
-
 	for epoch in range(args.epochs):
 		print("epoch {}".format(epoch))
 		model.train()
@@ -134,7 +130,9 @@ if __name__ == "__main__":
 			loss.backward()
 			optimizer.step()
 
-		if args.dataset == 'valid':
+		if args.dataset == 'valid' and test_loader :
+			print("Evaluate Model")
+			test_loader.dataset.all_sample_test()
 			model.eval()
 			metrics.hit(model, test_loader, test_question, test_answer)
 
@@ -144,8 +142,8 @@ if __name__ == "__main__":
 				time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
 		logger.write_log(config.train_log, "-------------------------------------")
 
-	if args.out:
-		if not os.path.exists(config.model_path):
-			os.mkdir(config.model_path)
-		torch.save(model.state_dict(),
-				   '{}{}_{}.pth'.format(config.model_path, config.model, args.dataset))
+		if args.out:
+			if not os.path.exists(config.model_path):
+				os.mkdir(config.model_path)
+			torch.save(model.state_dict(),
+					   '{}{}_{}.pth'.format(config.model_path, config.model, args.dataset))

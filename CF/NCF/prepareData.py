@@ -50,36 +50,37 @@ class DataProcessor :
         return plylst_song_map
 
 
-    def _removeFewData(self, user_boundary, song_boundary) :
+    def _removeFewData(self, data, user_boundary, song_boundary) :
         print("=> remove song and plylst which appears under the boundary in train set\n")
-        print("Before plylst nunique:{}, song nunique:{}".format(self.train['id'].nunique(),
-                                                                 self.train['songs'].nunique()))
+        print("Before plylst nunique:{}, song nunique:{}".format(data['id'].nunique(),
+                                                                 data['songs'].nunique()))
         # 음악이 boundary개 이하를 갖고 있는 플레이리스트를 지움
         # 플레이리스트 boundary개 이하 들어가는 노래는 지움
 
-        plylst_cnt = pd.DataFrame(self.train['id'].value_counts())
+        plylst_cnt = pd.DataFrame(data['id'].value_counts())
         plylst_cnt = plylst_cnt.rename(columns={"id": "plylst_cnt"})
         plylst_cnt = plylst_cnt.reset_index()
 
-        song_cnt = pd.DataFrame(self.train['songs'].value_counts())
+        song_cnt = pd.DataFrame(data['songs'].value_counts())
         song_cnt = song_cnt.rename(columns={"songs": "song_cnt"})
         song_cnt = song_cnt.reset_index()
 
-        self.train = self.train.merge(plylst_cnt, left_on='id', right_on='index', how="left")
+        data = data.merge(plylst_cnt, left_on='id', right_on='index', how="left")
 
-        self.train = self.train.merge(song_cnt, left_on='songs', right_on='index', how='left')
+        data = data.merge(song_cnt, left_on='songs', right_on='index', how='left')
 
-        self.train = self.train[self.train['song_cnt'] >= song_boundary]
-        self.train = self.train[self.train['plylst_cnt'] >= user_boundary]
+        data = data[data['song_cnt'] >= song_boundary]
+        data = data[data['plylst_cnt'] >= user_boundary]
 
-        del self.train['index_x']
-        del self.train['index_y']
-        del self.train['plylst_cnt']
-        del self.train['song_cnt']
+        del data['index_x']
+        del data['index_y']
+        del data['plylst_cnt']
+        del data['song_cnt']
 
-        print("After plylst nunique:{}, song nunique:{}\n".format(self.train['id'].nunique(),
-                                                                self.train['songs'].nunique()))
+        print("After plylst nunique:{}, song nunique:{}\n".format(data['id'].nunique(),
+                                                                data['songs'].nunique()))
 
+        return data
 
     def _removeOutOfTrain(self):
         print("=> remove data which is not in train set\n")
@@ -155,10 +156,12 @@ class DataProcessor :
 
 
     def run(self):
-        self._removeFewData(self.plylst_boundary, self.song_boundary)
-        self._removeOutOfTrain()
+        self.train = self._removeFewData(self.train, self.plylst_boundary, self.song_boundary)
+        # self.valid = self._removeFewData(self.valid, self.plylst_boundary, self.song_boundary)
+        # self.test = self._removeFewData(self.test, self.plylst_boundary, self.song_boundary)
 
-        self._splitValidation()
+        # self._removeOutOfTrain()
+        # self._splitValidation()
 
         self._saveData(self.train, self.train_fn)
         self._saveData(self.valid, self.valid_fn)
@@ -180,7 +183,6 @@ def parser_add_argument	( parser ) :
     return parser
 
 if __name__ == "__main__":
-
 
     parser = argparse.ArgumentParser()
     parser = parser_add_argument(parser)
