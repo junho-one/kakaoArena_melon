@@ -1,15 +1,9 @@
 import os
 import time
 import argparse
-import numpy as np
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import torch.utils.data as data
-import torch.backends.cudnn as cudnn
-from tensorboardX import SummaryWriter
-import copy
 
 import model
 import config
@@ -19,112 +13,89 @@ import json
 import logger
 
 
-if not os.path.exists(os.path.dirname(config.pred_log)):
-	os.mkdir(os.path.dirname(config.pred_log))
-
-parser = argparse.ArgumentParser()
-
-parser.add_argument("--batch_size",
-	type=int,
-	default=1,
-	help="batch size for training")
-parser.add_argument("--top_k",
-	type=int,
-	default=10,
-	help="compute metrics@top_k")
-parser.add_argument("--gpu",
-	type=str,
-	default="0",
-	help="gpu card ID")
-parser.add_argument("--dataset",
-	type=str,
-	default="valid",
-	help="train for 'valid' or 'test'")
-
-parser.add_argument("--dropout",
-	type=float,
-	default=0.0,
-	help="dropout rate")
-parser.add_argument("--factor_num",
-	type=int,
-	default=32,
-	help="predictive factors numbers in the model")
-parser.add_argument("--num_layers",
-	type=int,
-	default=3,
-	help="number of layers in MLP model")
-parser.add_argument("--out",
-	default=True,
-	help="save model or not")
-parser.add_argument("--epochs",
-	type=int,
-	default=10,
-	help="training epoches")
-
-args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+def parser_add_argument	( parser ) :
+    parser.add_argument("--batch_size",
+                        type=int,
+                        default=1,
+                        help="batch size for training")
+    parser.add_argument("--top_k",
+                        type=int,
+                        default=10,
+                        help="compute metrics@top_k")
+    parser.add_argument("--gpu",
+                        type=str,
+                        default="0",
+                        help="gpu card ID")
+    parser.add_argument("--dataset",
+                        type=str,
+                        default="valid",
+                        help="train for 'valid' or 'test'")
+    parser.add_argument("--factor_num",
+                        type=int,
+                        default=32,
+                        help="predictive factors numbers in the model")
+    parser.add_argument("--num_layers",
+                        type=int,
+                        default=3,
+                        help="number of layers in MLP model")
+    parser.add_argument("--out",
+                        default=True,
+                        help="save model or not")
+    return parser
 
 
 if __name__ == "__main__":
 
-	
-        logger.write_log(config.pred_log, "strart predict file 100 num_ng, total {} epoch".format(args.epochs))
+    parser = argparse.ArgumentParser()
+    parser = parser_add_argument(parser)
+    args = parser.parse_args()
 
-        train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-        inv_user_map = {v: k for k, v in user_map.items()}
-        inv_item_map = {v: k for k, v in item_map.items()}
+    start_time = time.time()
 
-        test_dataset = data_utils.NCFData(
-			test_question, item_num, train_mat, 0, False, user_map, item_map)
+    #####################PREPARE DATA###########################
+    print("Start predict.py, dataset : {}".format(args.dataset))
+    logger.write_log(config.pred_log, "strart to predict file".format(args.epochs))
 
-        test_loader = data.DataLoader(test_dataset,
-			batch_size=args.batch_size, shuffle=False, num_workers=1)
+    train_data, test_question, test_answer, user_num ,item_num, train_mat, user_map, item_map = data_utils.load_all(args.dataset)
 
-        GMF_model = None
-        MLP_model = None
-        
-        model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, args.dropout, config.model, GMF_model, MLP_model)
-        model.cuda()
-        print(model)
+    inv_user_map = {v: k for k, v in user_map.items()}
+    inv_item_map = {v: k for k, v in item_map.items()}
 
+    test_dataset = data_utils.NCFData(
+        test_question, item_num, train_mat, 0, False, user_map, item_map)
+    test_loader = data.DataLoader(test_dataset,
+        batch_size=args.batch_size, shuffle=False, num_workers=1)
 
-        test_loader.dataset.sample_all_user()
+    ########################LOAD MODEL###########################
+    GMF_model = None
+    MLP_model = None
 
-        print("start predict")
-        for epoch in range(4,args.epochs) :
-                print("START :", epoch)
-                start_time = time.time()
+    model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, args.dropout, config.model, GMF_model, MLP_model)
+    model.load_state_dict(torch.load('{}{}_{}.pth'.format(config.model_path, config.model, args.dataset)))
+    model.cuda()
 
-                logger.write_log(config.pred_log, "strart predict {} epoch".format(epoch))
+    ##########################PREDICT#############################
+    test_loader.dataset.all_sample_test()
 
-                model.load_state_dict(torch.load('{}{}_{}_{}.pth'.format(config.model_path, config.model, args.dataset, epoch)))
+    if args.dataset == 'test' :
+            predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
+    elif args.dataset == 'valid' :
+            predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
 
-                if args.dataset == 'valid' :
-                        metrics.hit(model, test_loader, test_question, test_answer)
-                        predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
-                elif args.dataset == 'test' :
-                        predictions = metrics.predict(model, test_loader, inv_user_map, inv_item_map)
+    if args.out :
+        if not os.path.exists(config.pred_path):
+                os.mkdir(config.pred_path)
 
-                if args.dataset == 'test':
-                        if not os.path.exists(config.pred_path):
-                                os.mkdir(config.pred_path)
+        if args.dataset == 'test':
+                with open(os.path.join(config.pred_path, "pred.txt"), "w") as fp :
+                        fp.write(json.dumps(predictions))
+        if args.dataset == 'valid' :
+                with open(os.path.join(config.pred_path, "pred_val.txt"), "w") as fp :
+                        fp.write(json.dumps(predictions))
 
-                        with open(os.path.join(config.pred_path, "pred_10_{}.txt".format(epoch)), "w") as fp :
-                                fp.write(json.dumps(predictions))
-
-                if args.dataset == 'valid':
-                        if not os.path.exists(config.pred_path):
-                                os.mkdir(config.pred_path)
-
-                        with open(os.path.join(config.pred_path, "pred_valid_10_{}.txt".format(epoch)), "w") as fp :
-                                fp.write(json.dumps(predictions))
-
-                elapsed_time = time.time() - start_time
-                logger.write_log(config.pred_log, "The time elapse of epoch {:03d}".format(epoch) + " is: " +
-                        time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
-                logger.write_log(config.pred_log, "-------------------------------------")
-
-# evaluate.predict(model, test_loader, inv_user_map, inv_item_map, top_k=1000)
-# 수정
-# acc = evaluate.predict(model, test_loader, args.top_k)
+    elapsed_time = time.time() - start_time
+    logger.write_log(config.pred_log, "The time elapse is: " +
+            time.strftime("%H: %M: %S", time.gmtime(elapsed_time)))
+    logger.write_log(config.pred_log, "-------------------------------------")

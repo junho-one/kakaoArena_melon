@@ -164,7 +164,7 @@ class DataProcessor :
         self.saveData(self.valid, self.valid_fn)
         self.saveData(self.test, self.test_fn)
 
-dir_path = './Data'
+dir_path = 'Data'
 train_fn ='train.json'
 test_fn = 'test.json'
 valid_fn = 'val.json'

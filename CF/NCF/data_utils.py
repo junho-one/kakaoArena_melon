@@ -29,10 +29,8 @@ def load_all(dataset="valid"):
     #  테스트셋을 question, answer로 나누고 question은 트레이닝 셋에 넣는다.
     train_data = pd.concat([train_data, test_question])
 
-
-
+    # 현재 데이터셋이 valid가 아니라 test용이라면 valid set을 train set에 병합시킨 뒤 학습시킨다.
     if dataset == "test":
-
         test_question_for_test = pd.read_csv(
             config.test_question,
             sep='\t', header=None, names=['user', 'item'],
@@ -42,9 +40,8 @@ def load_all(dataset="valid"):
         test_question = test_question_for_test
         test_answer = pd.DataFrame()
 
-
-    user_num, user_map = mapped(train_data['user'])
-    item_num, item_map = mapped(train_data['item'])
+    user_num, user_map = _mapped(train_data['user'])
+    item_num, item_map = _mapped(train_data['item'])
 
     train_data = train_data.values.tolist()
     test_question = test_question.values.tolist()
@@ -63,7 +60,7 @@ def load_all(dataset="valid"):
     return train_data, test_question, test_answer, user_num, item_num, train_mat, user_map, item_map
 
 
-def mapped(series) :
+def _mapped(series) :
     series_num = series.nunique()
     series_unique = series.unique()
     series_map = dict()
@@ -72,7 +69,6 @@ def mapped(series) :
         series_map[item] = idx
 
     return series_num, series_map
-
 
 
 class NCFData(data.Dataset):
@@ -116,28 +112,7 @@ class NCFData(data.Dataset):
         self.features = self.features_ps + self.features_ng
         self.labels = labels_ps + labels_ng
 
-    def ng_sample_accuracy(self):
-        print("strart test ng_sample")
-        test_ng = []
-        index = set(self.features_ps)
-
-        for user_id, item_id in self.features_ps:
-            for _ in range(self.num_ng):
-                item_not = np.random.randint(self.num_item)
-                while (user_id, item_not) in index or (user_id, item_not) in self.train_mat:
-                    item_not = np.random.randint(self.num_item)
-                test_ng.append((user_id, item_not))
-
-        test_labels_ps = [1 for _ in range(len(self.features_ps))]
-        test_labels_ng = [0 for _ in range(len(test_ng))]
-
-        self.features = self.features_ps + test_ng
-        self.labels = test_labels_ps + test_labels_ng
-
-        # negative에서 조금은 중복값이 생기는데  ㄱㅊ겠지
-
-
-    def sample_all_user(self):
+    def all_sample_test(self):
         self.features = set()
 
         for user, item in self.features_ps :
