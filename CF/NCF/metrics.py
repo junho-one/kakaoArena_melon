@@ -65,6 +65,7 @@ def predict(model, test_loader, test_question, inv_user_map, inv_item_map, top_k
         recommends = torch.take(
             item, indices).cpu().numpy().tolist()
 
+        # remove predictions in questions
         questions = set(question_dict[user.unique().cpu().numpy().tolist()[0]])
         recommends = set(recommends)
         recommends = recommends - questions
