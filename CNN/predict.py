@@ -28,10 +28,6 @@ def get_recommends(user_emb, items,item_id, top=100) :
     return recommends
 
 def parser_add_argument	( parser ) :
-    parser.add_argument("--lr",
-        type=float,
-        default=0.001,
-        help="learning rate")
     parser.add_argument("--gpu",
                         type=str,
                         default="5",
@@ -128,6 +124,7 @@ def make_user_embedding(question) :
         del means
 
 if __name__ == "__main__":
+    start_time = time.time()
 
     parser = argparse.ArgumentParser()
     parser = parser_add_argument( parser )
@@ -135,8 +132,6 @@ if __name__ == "__main__":
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    start_time = time.time()
 
     #################### LOAD MODEL ##############################
     encoder = Encoder().cuda()
@@ -159,7 +154,6 @@ if __name__ == "__main__":
     user_emb = make_user_embedding(test_question)
 
     ################### PREDICT #########################
-
     if not os.path.exists(args.pred_path):
         os.mkdir(args.pred_path)
 
