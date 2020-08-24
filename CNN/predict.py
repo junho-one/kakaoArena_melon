@@ -34,7 +34,7 @@ def parser_add_argument	( parser ) :
                         help="gpu card ID")
     parser.add_argument("--predictions_file",
                         type=str,
-                        default="../CF/NCF/preds/test.txt",
+                        default="../CF/NCF/preds/pred.txt",
                         help="output file of NCF")
     parser.add_argument("--image_folder",
                         type=str,
@@ -45,6 +45,7 @@ def parser_add_argument	( parser ) :
                         default="preds/",
                         help="result is saved in here")
     return parser
+
 
 def make_image_path(data_path) :
     dir_list = glob(os.path.join(data_path,"*"))

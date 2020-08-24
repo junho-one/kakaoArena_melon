@@ -18,10 +18,6 @@ def parser_add_argument	( parser ) :
         type=float,
         default=0.001,
         help="learning rate")
-    parser.add_argument("--dropout",
-        type=float,
-        default=0.0,
-        help="dropout rate")
     parser.add_argument("--batch_size",
         type=int,
         default=256,
@@ -35,6 +31,8 @@ def parser_add_argument	( parser ) :
         default="0",
         help="gpu card ID")
     return parser
+
+
 
 
 
