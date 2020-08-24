@@ -1,22 +1,39 @@
 # kakaoArena melon playlist contiunation
 
-이 콘테스트의 목적은 플레이리스트에 속한 일부 노래들에 대한 정보를 바탕으로 
-숨겨져 있는 나머지 곡들을 추정하는 것이다.
+이 대회의 목적은 플레이리스트에 수록된 곡과 태그의 정보가 일부만 주어질 때, 나머지 주어지지 않은 플레이리스트의 곡들과 태그를 예측하는 것이다.
+해당 대회에서는 주어진 플레이리스트 정보를 통해 원래 플레이리스트에 수록되어 있을 것이라 생각되는 곡 100개와 태그 10개를 예측해 점수를 매긴다.
 
-사용한 데이터는 [이 사이트](https://arena.kakao.com/c/7) 에서 다운로드 했습니다.
+자세한 내용은 [해당 사이트](https://arena.kakao.com/c/7)를 참고하길 바랍니다.
+또한 필요한 데이터는 [이 사이트](https://arena.kakao.com/c/7/data) 에서 다운로드 할 수 있습니다.
 
-NCF를 사용하여 content based filtering을 하기 위한 후보군을 추린 뒤 
-CNN based auto encoder를 통해 학습한 이미지 피쳐를 가지고 노래간 코사인 유사도를 구한다.
-유사도가 높으면 같은 플레이리스트에 있을 확률이 높다고 가정하여 해당 노래를 추천한다.
 
-## 1. NCF (collaborative filtering)
+# NCF-AutoEncoder recommendation system
+
+위 대회 참가를 목적으로 일부 플레이리스트의 정보가 들어왔을 때, 주어지지 않은 플레이리스트에 수록된 곡을 예측하는 추천 시스템을 개발했습니다. 
+
+11만개의 플레이리스트와 곡의 개수가 70만개에 달하는 방대한 데이터를 다뤄야 하기에 모든 플레이리스트와 곡들간의 유사도를 구하기 위해서는 긴 시간이 소요됩니다. 
+시간을 단축시키기 위해서 **Neural Collaborative Filtering(NCF)을 통해 해당 플레이리스트에 속할 가능성이 높은 후보곡들을 추려냈습니다.**
+
+**그 후 플레이리스트와 후보곡들간의 유사도를 구하여 유사도가 가장 높은 100개의 곡을 추천하는 시스템입니다.**
+이때 플레이리스트와 곡들간의 유사도를 구하기 위해 해당 곡의 mel-spectogram을 Convolutional Autoencoder와 Cosine Similarity가 사용됩니다.
+
+모든 곡의 mel-spectogram을 학습 데이터로 사용해 Convolutional Autoencoder를 학습시킨 뒤 Encoder 부분만 떼어내어 Embedding model로 사용합니다. 
+mel-spectogram이 Encoder를 통과하면 5000차원의 Embedding Vector로 변환되고, 두 Vector간의 Cosine similarity를 통해 유사도를 계산합니다.
+이때 플레이리스트의 Embedding Vector는 플레이리스트에 수록된 곡들의 Embedding Vector의 평균값이 됩니다.
+
+
+
+# 사용법
+
+## 1. NCF (Collaborative Filtering)
 
 ### 1.1 제공된 데이터 전처리 
-원본 데이터로부터 CF에 필요한 user ID, item ID 매핑 데이터를 구한다.
-item을 적게 포함하고 있는 user를 지우기 위한 user boundary와 
-user에 적게 포함되어 있는 item을 지우기 위한 item boundary를 통해 
-cold start가 우려되는 데이터는 제거한 뒤 학습셋을 구축했다.
+원본 데이터로부터 학습에 필요한 {"플레이리스트 ID" : ["노래(1)ID", "노래(2)ID" ... "노래(n)ID"]} 형태의 데이터로 변환합니다.
+이때 cold start가 우려되는 데이터는 학습에 방해가 될 것이라고 판단하여 제거한 뒤 학습셋을 구축했습니다.
 
+임계값으로 user boundary, item boundary 사용합니다.
+* user boundary : 노래를 user boundary개 보다 적게 포함하고 있는 플레이리스트는 제거하고,  
+* item boundary : 플레이리스트에 item boundary개 보다 적게 포함되어 있는 노래는 제거합니다.
 ```
 python prepareData.py
 --data_folder Data/ 
@@ -24,11 +41,7 @@ python prepareData.py
 --item_boundary 5
 ```
 
-아웃풋 데이터는 melon_test.txt
-melon_train.txt 
-melon_val.txt
-melon_val_question.txt
-melon_val_answer.txt 가 나온다.
+아웃풋 데이터는 melon_train.txt, melon_test.txt, melon_val.txt, melon_val_question.txt, melon_val_answer.txt가 있습니다.
 
 여기서 validation.json을 val_question과 val_answer로 나눴다.
 val_question에는 있는 데이터는 플레이리스트에 속한 곡 중에서 보여지는 데이터로써 학습에 사용되고,
@@ -64,7 +77,7 @@ python predict.py
 
 
 
-## 2. CNN based AutoEncoder (content based filtering)
+## 2. Convolutional Autoencoder (content based filtering)
 
 ### 2.1 훈련
 ```
