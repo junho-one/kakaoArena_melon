@@ -75,26 +75,25 @@ if __name__ == "__main__":
     model = model.NCF(user_num, item_num, args.factor_num, args.num_layers, 0, config.model, GMF_model, MLP_model)
     model.load_state_dict(torch.load('{}{}_{}.pth'.format(config.model_path, config.model, args.dataset)))
     model.cuda()
-
     ##########################PREDICT#############################
     model.eval()
     test_loader.dataset.all_sample_test()
 
     if args.dataset == 'test' :
-            predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
+        predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
     elif args.dataset == 'valid' :
-            predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
+        predictions = metrics.predict(model, test_loader, test_question, inv_user_map, inv_item_map, args.top_k)
 
     if args.out :
         if not os.path.exists(config.pred_path):
-                os.mkdir(config.pred_path)
+            os.mkdir(config.pred_path)
 
         if args.dataset == 'test':
-                with open(os.path.join(config.pred_path, "pred.txt"), "w") as fp :
-                        fp.write(json.dumps(predictions))
+            with open(os.path.join(config.pred_path, "pred.txt"), "w") as fp :
+                    fp.write(json.dumps(predictions))
         if args.dataset == 'valid' :
-                with open(os.path.join(config.pred_path, "pred_val.txt"), "w") as fp :
-                        fp.write(json.dumps(predictions))
+            with open(os.path.join(config.pred_path, "pred_val.txt"), "w") as fp :
+                    fp.write(json.dumps(predictions))
 
     elapsed_time = time.time() - start_time
     logger.write_log(config.pred_log, "The time elapse is: " +

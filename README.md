@@ -31,7 +31,7 @@ mel-spectogram이 Encoder를 통과하면 5000차원의 Embedding Vector로 변�
 원본 데이터로부터 학습에 필요한 {"플레이리스트 ID" : ["노래(1)ID", "노래(2)ID" ... "노래(n)ID"]} 형태의 데이터로 변환합니다.
 이때 cold start가 우려되는 데이터는 학습에 방해가 될 것이라고 판단하여 제거한 뒤 학습셋을 구축했습니다.
 
-임계값으로 user boundary, item boundary 사용합니다.
+데이터 제거를 위한 임계값으로 user boundary, item boundary 사용합니다.
 * user boundary : 노래를 user boundary개 보다 적게 포함하고 있는 플레이리스트는 제거하고,  
 * item boundary : 플레이리스트에 item boundary개 보다 적게 포함되어 있는 노래는 제거합니다.
 ```
@@ -41,16 +41,20 @@ python prepareData.py
 --item_boundary 5
 ```
 
-아웃풋 데이터는 melon_train.txt, melon_test.txt, melon_val.txt, melon_val_question.txt, melon_val_answer.txt가 있습니다.
+아웃풋 데이터
+* melon_train.txt : 학습 데이터셋
+* melon_val.txt : 평가 데이터셋의 question에 해당한다. 이 데이터를 이용해 평가 데이터셋에서 주어지지 않은 곡들(answer)을 예측한다.
+* melon_test.txt : 결과 데이터셋의 question에 해당한다. 이 데이터를 이용해 결과 데이터셋에서 주어지지 않은 곡들(answer)을 예측한다.
 
-여기서 validation.json을 val_question과 val_answer로 나눴다.
-val_question에는 있는 데이터는 플레이리스트에 속한 곡 중에서 보여지는 데이터로써 학습에 사용되고,
-val_answer은 train set과 val_question을 학습한 뒤 예측해야 하는 플레이리스트에 숨겨진 곡들이다.
 
 
 ### 1.2 모델 학습
 NCF 모델을 불러와 학습시킨다. 
-num_ng는 negative sample의 개수로 데이터 준비 과정에서 무작위로 만들어낸다.
+num_ng는 negative sample의 개수로 데이터 준비 과정에서 무작위로 만들어낸다. 
+
+dataset이 valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습시키고,
+test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습시킨다.
+
 ```
 python train.py 
 --batch_size 4096
@@ -62,9 +66,16 @@ python train.py
 --epochs 8
 ```
 
-### 1.3 예측
+* 추후 answer 데이터가 공개될 것을 고려하여 코드를 작성해놓았습니다.
+config.py에 있는 val_answer 변수에 valid용 정답 데이터를 넣으면 됩니다.
+
+### 1.3 후보군 예측
 학습된 모델을 불러와 예측한다.
-top_k 파라미터를 통해 logit의 결과가 가장 높은 top_k개의 데이터만 예측 결과로 사용한다.
+
+top_k 파라미터를 통해 logit의 결과가 가장 높은 top_k개의 데이터만 최종 후보군으로 선택합니다
+이때 높은 logit을 가져 후보군으로 선정되었지만, question에 속해있는 곡들은 제외시켰습니다.
+
+batch_size를 1만 해도 model에 들어갈 때는 (user,item) 쌍이 item 개수만큼 들어간다. 여기선 대략 30만
 
 ```
 python predict.py 
@@ -72,7 +83,7 @@ python predict.py
 --dataset valid 
 --factor_num 32 
 --gpu 4 
---epochs 8
+--top_k 1000
 ```
 
 
