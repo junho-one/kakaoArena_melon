@@ -1,3 +1,7 @@
 CF/NCF/Data
+CF/NCF/models
+CF/NCF/preds
+CF/NCF/logs
 CNN/Data
 CNN/models
+CNN/preds
