@@ -4,7 +4,7 @@
 해당 대회에서는 주어진 플레이리스트 정보를 통해 원래 플레이리스트에 수록되어 있을 것이라 생각되는 곡 100개와 태그 10개를 예측해 점수를 매깁니다.
 
 자세한 내용은 [해당 사이트](https://arena.kakao.com/c/7)를 참고하길 바랍니다.<br/>
-또한 필요한 데이터는 [이 사이트](https://arena.kakao.com/c/7/data) 에서 다운로드 할 수 있습니다.
+또한 필요한 데이터는 [여기](https://arena.kakao.com/c/7/data) 에서 다운로드 할 수 있습니다.
 
 
 # NCF-AutoEncoder recommendation system
@@ -28,18 +28,20 @@ mel-spectogram이 Encoder를 통과하면 5000차원의 Embedding Vector로 변�
 ## 1. NCF (Collaborative Filtering)
 
 ### 1.1 제공된 데이터 전처리 
-원본 데이터로부터 학습에 필요한 {"플레이리스트 ID" : ["노래(1)ID", "노래(2)ID" ... "노래(n)ID"]} 형태의 데이터로 변환합니다.<br/>
-이때 cold start가 우려되는 데이터는 학습에 방해가 될 것이라고 판단하여 제거한 뒤 학습셋을 구축했습니다.
 
-데이터 제거를 위한 임계값으로 user boundary, item boundary 사용합니다.
-* user boundary : 노래를 user boundary개 보다 적게 포함하고 있는 플레이리스트는 제거하고,  
-* item boundary : 플레이리스트에 item boundary개 보다 적게 포함되어 있는 노래는 제거합니다.
 ```
 python prepareData.py
 --data_folder Data/ 
 --user_boundary 2 
 --item_boundary 5
 ```
+
+원본 데이터로부터 학습에 필요한 {"플레이리스트 ID" : ["노래(1)ID", "노래(2)ID" ... "노래(n)ID"]} 형태의 데이터로 변환합니다.<br/>
+이때 cold start가 우려되는 데이터는 학습에 방해가 될 것이라고 판단하여 제거한 뒤 학습셋을 구축했습니다.
+
+데이터 제거를 위한 임계값으로 user boundary, item boundary 사용합니다.
+* user boundary : 노래를 user boundary개 보다 적게 포함하고 있는 플레이리스트는 제거하고,  
+* item boundary : 플레이리스트에 item boundary개 보다 적게 포함되어 있는 노래는 제거합니다.
 
 아웃풋 데이터
 * melon_train.txt : 학습 데이터셋
@@ -49,12 +51,6 @@ python prepareData.py
 
 
 ### 1.2 모델 학습
-NCF 모델을 불러와 학습시킨다. 
-
-num_ng는 negative sample의 개수로 데이터 준비 과정에서 무작위로 만들어낸다. 
-
-dataset이 valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습시키고,<br/>
-test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습시킨다.
 
 ```
 python train.py 
@@ -67,10 +63,25 @@ python train.py
 --epochs 8
 ```
 
-* 추후 answer 데이터가 공개될 것을 고려하여 코드를 작성해놓았습니다.
+NCF 모델을 불러와 학습시킨다. 
+
+num_ng는 negative sample의 개수로 데이터 준비 과정에서 무작위로 만들어낸다. 
+
+dataset이 valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습시키고,<br/>
+test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습시킨다.
+
+> 추후 answer 데이터가 공개될 것을 고려하여 코드를 작성해놓았습니다.
 config.py에 있는 val_answer 변수에 valid용 정답 데이터를 넣으면 됩니다.
 
 ### 1.3 후보군 예측
+```
+python predict.py 
+--batch_size 1 
+--dataset valid 
+--factor_num 32 
+--gpu 4 
+--top_k 1000
+```
 학습된 모델을 불러와 예측한다.<br/>
 매 플레이리스트 마다 모든 곡들과의 logit값을 구한 뒤 그 중 top_k만 뽑아내게 됩니다.
 
@@ -80,14 +91,6 @@ top_k 파라미터를 통해 logit의 결과가 가장 높은 top_k개의 데이
 batch_size의 의미는 한번에 모델에 들어가는 플레이리스트의 개수가 된다.<br/>
 1로 하면 하나의 플레이리스트와 모든 곡들간의 쌍이 들어가게 된다. (대략 30만개) 
 
-```
-python predict.py 
---batch_size 1 
---dataset valid 
---factor_num 32 
---gpu 4 
---top_k 1000
-```
 
 ## 2. Convolutional Autoencoder (content based filtering)
 
@@ -111,5 +114,7 @@ python predict.py
 --image_folder Data/arena_mel
 --pred_path preds/
 ```
-플레이리스트의 Embedding Vector는 플레이리스트의 미리 보여진 곡들의 Embedding Vector의 평균값이다.<br/>
-이 플레이리스트의 Embedding Vector와 NCF를 통해 추천된 후보곡들의 Embedding Vector간의 유사도를 구한 후 유사도가 높은 곡 100개만을 추려 최종적으로 추천한다.
+
+플레이리스트의 Embedding Vector와 NCF를 통해 추천된 후보곡들의 Embedding Vector간의 유사도를 구한 후 유사도가 높은 곡 100개만을 추려 최종적으로 추천한다.
+> 플레이리스트의 Embedding Vector는 플레이리스트의 미리 보여진 곡들의 Embedding Vector의 평균값
+
