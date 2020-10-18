@@ -11,17 +11,14 @@
 
 위 대회 참가를 목적으로 일부 플레이리스트의 정보가 들어왔을 때, 주어지지 않은 플레이리스트에 수록된 곡을 예측하는 추천 시스템을 개발했습니다. 
 
-1. **Neural Collaborative Filtering(NCF)**을 통해 전체 곡 중에서 해당 플레이리스트에 속할 가능성이 높은 후보곡들을 추려냈습니다.
+1. __Neural Collaborative Filtering(NCF)__을 통해 전체 곡 중에서 해당 플레이리스트에 속할 가능성이 높은 후보곡들을 추려냈습니다.
 2. Convolutional AutoEncoder를 통해 뽑아낸 Mel-spectrogram의 Embedding Vector와 코사인 유사도를 이용하여 플레이리스트와 후보곡 중 값이 가장 큰 100개의 곡을 추천합니다.
-
-이때 플레이리스트와 곡들간의 유사도를 구하기 위해 해당 곡의 Mel-spectrogram을 Convolutional Autoencoder와 Cosine Similarity가 사용됩니다.
-
 
 
 # 사용법
 
 ## 1. NCF (Collaborative Filtering)
-논문 링크 : ![](https://arxiv.org/abs/1708.05031)
+![논문 링크](https://arxiv.org/abs/1708.05031)
 
 ### 1.1 제공된 데이터 전처리 
 
