@@ -55,12 +55,12 @@ python train.py
 --num_ng 20
 --epochs 8
 ```
-<pre>
+
 num_ng : negative sample(해당 플레이리스트에 속하지 않은 곡)의 개수로 데이터 준비 과정에서 무작위로 만들어냅니다. 
 
 dataset : valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습하고,<br/>
-          test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습합니다.
-</pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습합니다.
+
 
 ### 1.3 후보군 예측
 ```
