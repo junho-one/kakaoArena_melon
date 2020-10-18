@@ -11,21 +11,17 @@
 
 위 대회 참가를 목적으로 일부 플레이리스트의 정보가 들어왔을 때, 주어지지 않은 플레이리스트에 수록된 곡을 예측하는 추천 시스템을 개발했습니다. 
 
-11만개의 플레이리스트와 곡의 개수가 70만개에 달하는 방대한 데이터를 다뤄야 하기에 모든 플레이리스트와 곡들간의 유사도를 구하기 위해서는 긴 시간이 소요됩니다. <br/>
-시간을 단축시키기 위해서 **Neural Collaborative Filtering(NCF)을 통해 해당 플레이리스트에 속할 가능성이 높은 후보곡들을 추려냈습니다.**
+1. **Neural Collaborative Filtering(NCF)**을 통해 전체 곡 중에서 해당 플레이리스트에 속할 가능성이 높은 후보곡들을 추려냈습니다.
+2. Convolutional AutoEncoder를 통해 뽑아낸 Mel-spectrogram의 Embedding Vector와 코사인 유사도를 이용하여 플레이리스트와 후보곡 중 값이 가장 큰 100개의 곡을 추천합니다.
 
-**그 후 플레이리스트와 후보곡들간의 유사도를 구하여 유사도가 가장 높은 100개의 곡을 추천하는 시스템입니다.**<br/>
-이때 플레이리스트와 곡들간의 유사도를 구하기 위해 해당 곡의 mel-spectogram을 Convolutional Autoencoder와 Cosine Similarity가 사용됩니다.
-
-모든 곡의 mel-spectogram을 학습 데이터로 사용해 Convolutional Autoencoder를 학습시킨 뒤 Encoder 부분만 떼어내어 Embedding model로 사용합니다.<br/>
-mel-spectogram이 Encoder를 통과하면 5000차원의 Embedding Vector로 변환되고, 두 Vector간의 Cosine similarity를 통해 유사도를 계산합니다.<br/>
-이때 플레이리스트의 Embedding Vector는 플레이리스트에 수록된 곡들의 Embedding Vector의 평균값이 됩니다.
+이때 플레이리스트와 곡들간의 유사도를 구하기 위해 해당 곡의 Mel-spectrogram을 Convolutional Autoencoder와 Cosine Similarity가 사용됩니다.
 
 
 
 # 사용법
 
 ## 1. NCF (Collaborative Filtering)
+논문 링크 : ![](https://arxiv.org/abs/1708.05031)
 
 ### 1.1 제공된 데이터 전처리 
 
@@ -45,8 +41,8 @@ python prepareData.py
 
 아웃풋 데이터
 * melon_train.txt : 학습 데이터셋
-* melon_val.txt : 평가 데이터셋의 question에 해당한다. 이 데이터를 이용해 평가 데이터셋에서 주어지지 않은 곡들(answer)을 예측한다.
-* melon_test.txt : 결과 데이터셋의 question에 해당한다. 이 데이터를 이용해 결과 데이터셋에서 주어지지 않은 곡들(answer)을 예측한다.
+* melon_val.txt : 평가 데이터셋의 question에 해당합니다. 이 데이터를 이용해 평가 데이터셋에서 주어지지 않은 곡들(answer)을 예측합니다.
+* melon_test.txt : 결과 데이터셋의 question에 해당합니다. 이 데이터를 이용해 결과 데이터셋에서 주어지지 않은 곡들(answer)을 예측합니다.
 
 
 
@@ -63,15 +59,11 @@ python train.py
 --epochs 8
 ```
 
-NCF 모델을 불러와 학습시킨다. 
+num_ng : negative sample(해당 플레이리스트에 속하지 않은 곡)의 개수로 데이터 준비 과정에서 무작위로 만들어냅니다. 
 
-num_ng는 negative sample의 개수로 데이터 준비 과정에서 무작위로 만들어낸다. 
-
-dataset이 valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습시키고,<br/>
-test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습시킨다.
-
-> 추후 answer 데이터가 공개될 것을 고려하여 코드를 작성해놓았습니다.
-config.py에 있는 val_answer 변수에 valid용 정답 데이터를 넣으면 됩니다.
+dataset : valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습하고,<br/>
+          test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습합니다.
+          
 
 ### 1.3 후보군 예측
 ```
@@ -82,14 +74,16 @@ python predict.py
 --gpu 4 
 --top_k 1000
 ```
-학습된 모델을 불러와 예측한다.<br/>
-매 플레이리스트 마다 모든 곡들과의 logit값을 구한 뒤 그 중 top_k만 뽑아내게 됩니다.
+
+batch_size :  한번에 모델에 들어가는 플레이리스트의 개수가 됩니다.<br/>
+              1로 하면 하나의 플레이리스트와 모든 곡들간의 쌍이 들어가게 된다. (대략 30만개) 
+
+
+매 플레이리스트 마다 모든 곡들과의 logit값을 구한 뒤 그 중 top_k만 뽑아냅니다.
 
 top_k 파라미터를 통해 logit의 결과가 가장 높은 top_k개의 데이터만 최종 후보군으로 선택합니다<br/>
 이때 높은 logit을 가져 후보군으로 선정되었지만, question에 속해있는 곡들은 제외시켰습니다.
 
-batch_size의 의미는 한번에 모델에 들어가는 플레이리스트의 개수가 된다.<br/>
-1로 하면 하나의 플레이리스트와 모든 곡들간의 쌍이 들어가게 된다. (대략 30만개) 
 
 
 ## 2. Convolutional Autoencoder (content based filtering)
@@ -102,10 +96,11 @@ batch_size의 의미는 한번에 모델에 들어가는 플레이리스트의 �
 --lr 0.001
 --epochs 10
 ```
-Convolutional Autoencoder를 사용하여 Encoder와 Decoder를 학습시킨다.<br/>
-이 Encoder가 Embedding Model로 사용됙, Encoder의 출력은 5000 차원의 벡터(임베딩 벡터)가 된다.
 
-학습 전에 카카오 아레나 사이트에 접속하여 mel spectogram 이미지 파일을 다운받은 후 CNN/Data 폴더에 넣어줘야 한다.
+Encoder가 Embedding Model로 사용되고, Encoder의 출력은 5000 차원의 벡터(임베딩 벡터)가 됩니다.
+
+학습 전에 카카오 아레나 사이트에 접속하여 Mel-spectrogram 이미지 파일을 다운받은 후 CNN/Data 폴더에 넣어줘야 합니다.
+
 
 ### 2.2 예측
 ```
@@ -115,6 +110,6 @@ python predict.py
 --pred_path preds/
 ```
 
-플레이리스트의 Embedding Vector와 NCF를 통해 추천된 후보곡들의 Embedding Vector간의 유사도를 구한 후 유사도가 높은 곡 100개만을 추려 최종적으로 추천한다.
+플레이리스트의 Embedding Vector와 NCF를 통해 추천된 후보곡들의 Embedding Vector간의 유사도를 구한 후 유사도가 높은 곡 100개만을 추려 최종적으로 추천합니다.
 > 플레이리스트의 Embedding Vector는 플레이리스트의 미리 보여진 곡들의 Embedding Vector의 평균값
 
