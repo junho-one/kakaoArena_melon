@@ -59,7 +59,7 @@ python train.py
 num_ng : negative sample(해당 플레이리스트에 속하지 않은 곡)의 개수로 데이터 준비 과정에서 무작위로 만들어냅니다. 
 
 dataset : valid일 때는 melon_train.txt와 melon_val.txt를 train set으로 이용하여 모델을 학습하고,<br/>
-&emsp;&emsp;&emsp; test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습합니다.
+&emsp;&emsp;&emsp;&emsp; test일 때는 melon_train.txt, melon_val.txt, melon_test.txt를 이용하여 학습합니다.
 
 
 ### 1.3 후보군 예측
@@ -73,7 +73,7 @@ python predict.py
 ```
 
 batch_size :  한번에 모델에 들어가는 플레이리스트의 개수가 됩니다.<br/>
-&emsp;&emsp;&emsp;   1로 하면 하나의 플레이리스트와 모든 곡들간의 쌍이 들어가게 된다. (대략 30만개) 
+&emsp;&emsp;&emsp;&emsp; 1로 하면 하나의 플레이리스트와 모든 곡들간의 쌍이 들어가게 된다. (대략 30만개) 
 
 
 매 플레이리스트 마다 모든 곡들과의 logit값을 구한 뒤 그 중 top_k만 뽑아냅니다.
